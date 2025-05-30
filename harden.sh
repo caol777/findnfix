@@ -38,6 +38,7 @@ if [[ $EUID -ne 0 ]]; then
    echo "This script must be run as root" 
    exit 1
 fi
+
 # ======== File Attribute and Permission Hardening ========
 echo "Checking and correcting file attributes and permissions..."
 
@@ -77,10 +78,8 @@ sed -i 's/^#*MaxAuthTries.*/MaxAuthTries 2/' $SSH_CONFIG
 sed -i 's/^#*MaxSessions.*/MaxSessions 2/' $SSH_CONFIG
 sed -i 's/^#*AllowTcpForwarding.*/AllowTcpForwarding no/' $SSH_CONFIG
 
-
 systemctl restart sshd
 echo "SSH hardening completed."
-
 
 # ======== Login Definitions Hardening ========
 echo "Hardening login definitions..."
@@ -89,16 +88,22 @@ LOGIN_DEFS="/etc/login.defs"
 cp $LOGIN_DEFS ${LOGIN_DEFS}.bak
 
 # Set PASS_MAX_DAYS to 30
-sed -i 's/^\s*PASS_MAX_DAYS\s\+[0-9]\+/PASS_MAX_DAYS	30/' $LOGIN_DEFS
+sed -i 's/^\s*PASS_MAX_DAYS\s\+[0-9]\+/PASS_MAX_DAYS\t30/' $LOGIN_DEFS
 
 # Set PASS_MIN_DAYS to 10
-sed -i 's/^\s*PASS_MIN_DAYS\s\+[0-9]\+/PASS_MIN_DAYS	10/' $LOGIN_DEFS
+sed -i 's/^\s*PASS_MIN_DAYS\s\+[0-9]\+/PASS_MIN_DAYS\t10/' $LOGIN_DEFS
 
 # Set PASS_WARN_AGE to 7
-sed -i 's/^\s*PASS_WARN_AGE\s\+[0-9]\+/PASS_WARN_AGE	7/' $LOGIN_DEFS
+sed -i 's/^\s*PASS_WARN_AGE\s\+[0-9]\+/PASS_WARN_AGE\t7/' $LOGIN_DEFS
 
 # Set login retry limit
-sed -i 's/^\s*LOGIN_RETRIES\s\+[0-9]\+/LOGIN_RETRIES	3/' $LOGIN_DEFS
+sed -i 's/^\s*LOGIN_RETRIES\s\+[0-9]\+/LOGIN_RETRIES\t3/' $LOGIN_DEFS
+
+# Add additional login definitions
+grep -qxF 'FAILLOG_ENAB YES' "$LOGIN_DEFS" || echo 'FAILLOG_ENAB YES' >> "$LOGIN_DEFS"
+grep -qxF 'LOG_UNKFAIL_ENAB YES' "$LOGIN_DEFS" || echo 'LOG_UNKFAIL_ENAB YES' >> "$LOGIN_DEFS"
+grep -qxF 'SYSLOG_SU_ENAB YES' "$LOGIN_DEFS" || echo 'SYSLOG_SU_ENAB YES' >> "$LOGIN_DEFS"
+grep -qxF 'SYSLOG_SG_ENAB YES' "$LOGIN_DEFS" || echo 'SYSLOG_SG_ENAB YES' >> "$LOGIN_DEFS"
 
 # ======== System-Specific Hardening ========
 detect_os
@@ -175,6 +180,7 @@ EOL
             yum reinstall firefox -y
             yum install clamtk bind bind-utils -y
         fi
+
         # DNS Hardening
         cat <<EOL >> /etc/named.conf
 options {
@@ -241,5 +247,10 @@ EOL
 
 sysctl -p >/dev/null
 echo "Kernel hardening completed."
+
+# ======== PAM Password Complexity Hardening ========
+echo "Hardening PAM password complexity..."
+sed -i -e 's/difok=3\+/difok=3 ucredit=-1 lcredit=-1 dcredit=-1 ocredit=-1/' /etc/pam.d/common-password
+echo "PAM password complexity hardening completed."
 
 echo "✅ System hardening completed successfully."
