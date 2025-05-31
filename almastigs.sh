@@ -10,7 +10,7 @@ echo "The .conf file has been updated successfully."
 # More fixes
 echo "declare -xr TMOUT=600" > /etc/profile.d/tmout.sh
 echo "LogLevel VERBOSE" > /etc/ssh/sshd_config.d/40-loglevel.conf
-#!/bin/bash
+
 
 # Function to ensure a line is present in a file
 ensure_line_in_file() {
@@ -86,7 +86,6 @@ else
     echo "OpenSSL crypto policy include already present in $OPENSSL_CONF"
 fi
 
-#!/bin/bash
 
 AUDIT_RULES_FILE="/etc/audit/rules.d/audit.rules"
 
@@ -116,7 +115,6 @@ augenrules --load
 
 echo "Audit rules applied. A reboot is recommended to ensure full enforcement."
 
-#!/bin/bash
 
 # Set CtrlAltDelBurstAction=none in /etc/systemd/system.conf
 SYSTEM_CONF="/etc/systemd/system.conf"
@@ -139,3 +137,31 @@ echo "Updated ExecStart in $RESCUE_SERVICE to require authentication"
 # Reload systemd to apply changes
 systemctl daemon-reexec
 echo "Systemd daemon reloaded. Changes applied."
+
+
+
+AUDIT_RULES_FILE="/etc/audit/rules.d/audit.rules"
+
+# Define sudo audit rules
+SUDO_AUDIT_RULES=(
+"-a always,exit -F arch=b32 -S execve -C uid!=euid -F euid=0 -k execpriv"
+"-a always,exit -F arch=b64 -S execve -C uid!=euid -F euid=0 -k execpriv"
+"-a always,exit -F arch=b32 -S execve -C gid!=egid -F egid=0 -k execpriv"
+"-a always,exit -F arch=b64 -S execve -C gid!=egid -F egid=0 -k execpriv"
+)
+
+# Ensure each rule is present
+for rule in "${SUDO_AUDIT_RULES[@]}"; do
+    if ! grep -Fxq "$rule" "$AUDIT_RULES_FILE"; then
+        echo "$rule" >> "$AUDIT_RULES_FILE"
+        echo "Added audit rule: $rule"
+    else
+        echo "Audit rule already present: $rule"
+    fi
+done
+
+# Apply the audit rules
+augenrules --load
+
+echo "Audit rules for sudo command usage applied. A reboot is recommended to ensure full enforcement."
+
