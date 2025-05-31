@@ -61,3 +61,15 @@ grep -qxF 'CREATE_HOME yes' "$LOGIN_DEFS" || echo 'CREATE_HOME yes' >> "$LOGIN_D
 grep -qxF 'FAIL_DELAY 4' "$LOGIN_DEFS" || echo 'FAIL_DELAY 4' >> "$LOGIN_DEFS"
 grep -qxF 'UMASK 077' "$LOGIN_DEFS" || echo 'UMASK 077' >> "$LOGIN_DEFS"
 grep -qxF 'PASS_MIN_LEN 15' "$LOGIN_DEFS" || echo 'PASS_MIN_LEN 15' >> "$LOGIN_DEFS"
+
+
+# Ensure libreswan crypto policy is included in /etc/ipsec.conf
+IPSEC_CONF="/etc/ipsec.conf"
+INCLUDE_LINE="include /etc/crypto-policies/back-ends/libreswan.config"
+
+if ! grep -Fxq "$INCLUDE_LINE" "$IPSEC_CONF"; then
+    echo "$INCLUDE_LINE" >> "$IPSEC_CONF"
+    echo "Added libreswan crypto policy include to $IPSEC_CONF"
+else
+    echo "Libreswan crypto policy include already present in $IPSEC_CONF"
+fi
