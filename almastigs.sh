@@ -73,3 +73,69 @@ if ! grep -Fxq "$INCLUDE_LINE" "$IPSEC_CONF"; then
 else
     echo "Libreswan crypto policy include already present in $IPSEC_CONF"
 fi
+
+
+# Ensure OpenSSL uses system crypto policy
+OPENSSL_CONF="/etc/pki/tls/openssl.cnf"
+INCLUDE_LINE=".include = /etc/crypto-policies/back-ends/opensslcnf.config"
+
+if ! grep -Fxq "$INCLUDE_LINE" "$OPENSSL_CONF"; then
+    echo "$INCLUDE_LINE" >> "$OPENSSL_CONF"
+    echo "Added OpenSSL crypto policy include to $OPENSSL_CONF"
+else
+    echo "OpenSSL crypto policy include already present in $OPENSSL_CONF"
+fi
+
+#!/bin/bash
+
+AUDIT_RULES_FILE="/etc/audit/rules.d/audit.rules"
+
+# Define audit rules
+AUDIT_RULES=(
+"-w /etc/sudoers -p wa -k identity"
+"-w /etc/sudoers.d/ -p wa -k identity"
+"-w /etc/passwd -p wa -k identity"
+"-w /etc/shadow -p wa -k identity"
+"-w /etc/group -p wa -k identity"
+"-w /etc/gshadow -p wa -k identity"
+"-w /etc/security/opasswd -p wa -k identity"
+)
+
+# Ensure each rule is present
+for rule in "${AUDIT_RULES[@]}"; do
+    if ! grep -Fxq "$rule" "$AUDIT_RULES_FILE"; then
+        echo "$rule" >> "$AUDIT_RULES_FILE"
+        echo "Added audit rule: $rule"
+    else
+        echo "Audit rule already present: $rule"
+    fi
+done
+
+# Apply the audit rules
+augenrules --load
+
+echo "Audit rules applied. A reboot is recommended to ensure full enforcement."
+
+#!/bin/bash
+
+# Set CtrlAltDelBurstAction=none in /etc/systemd/system.conf
+SYSTEM_CONF="/etc/systemd/system.conf"
+if grep -q "^#*CtrlAltDelBurstAction=" "$SYSTEM_CONF"; then
+    sed -i 's/^#*CtrlAltDelBurstAction=.*/CtrlAltDelBurstAction=none/' "$SYSTEM_CONF"
+else
+    echo "CtrlAltDelBurstAction=none" >> "$SYSTEM_CONF"
+fi
+echo "Set CtrlAltDelBurstAction=none in $SYSTEM_CONF"
+
+# Ensure rescue mode requires authentication
+RESCUE_SERVICE="/usr/lib/systemd/system/rescue.service"
+if grep -q "^ExecStart=" "$RESCUE_SERVICE"; then
+    sed -i 's|^ExecStart=.*|ExecStart=-/usr/lib/systemd/systemd-sulogin-shell rescue|' "$RESCUE_SERVICE"
+else
+    echo "ExecStart=-/usr/lib/systemd/systemd-sulogin-shell rescue" >> "$RESCUE_SERVICE"
+fi
+echo "Updated ExecStart in $RESCUE_SERVICE to require authentication"
+
+# Reload systemd to apply changes
+systemctl daemon-reexec
+echo "Systemd daemon reloaded. Changes applied."
