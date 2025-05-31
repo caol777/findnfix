@@ -50,3 +50,14 @@ echo "The SSH client configuration has been updated with FIPS 140-3 approved cip
 echo "The script has been executed successfully. A reboot is required for the changes to take effect."
 
 sudo dnf reinstall openssh-clients
+
+
+
+LOGIN_DEFS="/etc/login.defs"
+
+# Ensure secure login.defs settings
+grep -qxF 'ENCRYPT_METHOD SHA512' "$LOGIN_DEFS" || echo 'ENCRYPT_METHOD SHA512' >> "$LOGIN_DEFS"
+grep -qxF 'CREATE_HOME yes' "$LOGIN_DEFS" || echo 'CREATE_HOME yes' >> "$LOGIN_DEFS"
+grep -qxF 'FAIL_DELAY 4' "$LOGIN_DEFS" || echo 'FAIL_DELAY 4' >> "$LOGIN_DEFS"
+grep -qxF 'UMASK 077' "$LOGIN_DEFS" || echo 'UMASK 077' >> "$LOGIN_DEFS"
+grep -qxF 'PASS_MIN_LEN 15' "$LOGIN_DEFS" || echo 'PASS_MIN_LEN 15' >> "$LOGIN_DEFS"
