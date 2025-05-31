@@ -61,6 +61,10 @@ for file in /etc/passwd /etc/shadow /etc/group; do
     echo "Permissions set for $file"
 done
 
+chown root:root /etc/passwd
+chown root:root /etc/group
+chown root:root /etc/shadow
+
 echo "File attribute and permission hardening completed."
 
 # ======== SSH Hardening ========
