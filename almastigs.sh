@@ -6,3 +6,47 @@ echo "* hard core 0
 
 # Print a success message
 echo "The .conf file has been updated successfully."
+
+# More fixes
+echo "declare -xr TMOUT=600" > /etc/profile.d/tmout.sh
+echo "LogLevel VERBOSE" > /etc/ssh/sshd_config.d/40-loglevel.conf
+#!/bin/bash
+
+# Function to ensure a line is present in a file
+ensure_line_in_file() {
+    local line="$1"
+    local file="$2"
+    grep -qxF "$line" "$file" || echo "$line" >> "$file"
+}
+
+# Ensure the line is present in /etc/rsyslog.conf or a .conf file in /etc/rsyslog.d/
+line="auth.*;authpriv.*;daemon.* /var/log/secure"
+rsyslog_conf="/etc/rsyslog.conf"
+rsyslog_d_conf="/etc/rsyslog.d/secure_logging.conf"
+
+if grep -q "$line" "$rsyslog_conf"; then
+    echo "The line is already present in $rsyslog_conf"
+else
+    if grep -qr "$line" /etc/rsyslog.d/; then
+        echo "The line is already present in a .conf file within /etc/rsyslog.d/"
+    else
+        ensure_line_in_file "$line" "$rsyslog_d_conf"
+        echo "The line has been added to $rsyslog_d_conf"
+    fi
+fi
+
+# Print a success message
+echo "The script has been executed successfully."
+
+
+
+# Update the SSH client configuration to use only FIPS 140-3 approved ciphers
+ssh_ciphers="Ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes128-ctr"
+ssh_config="/etc/crypto-policies/back-ends/openssh.config"
+ensure_line_in_file "$ssh_ciphers" "$ssh_config"
+echo "The SSH client configuration has been updated with FIPS 140-3 approved ciphers."
+
+# Print a success message
+echo "The script has been executed successfully. A reboot is required for the changes to take effect."
+
+sudo dnf reinstall openssh-clients
