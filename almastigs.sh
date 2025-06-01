@@ -165,3 +165,4 @@ augenrules --load
 
 echo "Audit rules for sudo command usage applied. A reboot is recommended to ensure full enforcement."
 
+sudo passwd -l root
