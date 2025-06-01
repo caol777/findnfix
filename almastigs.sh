@@ -166,3 +166,24 @@ augenrules --load
 echo "Audit rules for sudo command usage applied. A reboot is recommended to ensure full enforcement."
 
 sudo passwd -l root
+
+
+echo "Removing NOPASSWD and !authenticate from sudoers files..."
+
+# Backup sudoers file
+cp /etc/sudoers /etc/sudoers.bak
+
+# Remove NOPASSWD and !authenticate from /etc/sudoers
+sed -i 's/\s*NOPASSWD:\s*//g' /etc/sudoers
+sed -i 's/\s*!authenticate\s*//g' /etc/sudoers
+
+# Process each file in /etc/sudoers.d/
+for file in /etc/sudoers.d/*; do
+    [ -f "$file" ] || continue
+    cp "$file" "$file.bak"
+    sed -i 's/\s*NOPASSWD:\s*//g' "$file"
+    sed -i 's/\s*!authenticate\s*//g' "$file"
+done
+
+echo "Sudoers files cleaned."
+
