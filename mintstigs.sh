@@ -99,3 +99,20 @@ for file in /etc/sudoers.d/*; do
 done
 
 echo "Sudoers files cleaned."
+
+
+echo "Configuring AIDE to send notifications on unauthorized changes..."
+
+# Ensure the default config file exists
+AIDE_CONF="/etc/default/aide"
+touch "$AIDE_CONF"
+
+# Remove any existing SILENTREPORTS line
+sed -i '/^SILENTREPORTS=/d' "$AIDE_CONF"
+
+# Add the correct setting
+echo 'SILENTREPORTS=no' >> "$AIDE_CONF"
+
+# Set appropriate permissions
+chmod 644 "$AIDE_CONF"
+
