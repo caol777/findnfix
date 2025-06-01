@@ -247,6 +247,7 @@ kernel.unprivileged_userns_clone = 0
 fs.protected_fifos = 2
 fs.protected_regular = 2
 kernel.exec-shield = 1
+kernel.dmesg_restrict = 1
 EOL
 
 sysctl -p >/dev/null
